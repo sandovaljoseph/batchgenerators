@@ -421,7 +421,6 @@ class AppendChannelsTransform(AbstractTransform):
         selected_channels = inp[:, self.channel_indexes]
 
         if outp is None:
-            #warn("output key %s is not present in dict, it will be created" % self.output_key)
             outp = selected_channels
             data_dict[self.output_key] = outp
         else:
@@ -494,8 +493,7 @@ class OneOfTransformPerSample(AbstractTransform):
             assert sum(p) == 1, 'probabilities must sum to 1'
 
     def __call__(self, **data_dict):
-        # for each sample in the batch, construct a new dict using the relevant keys. All entries of relevent_keys are
-        # expected to have the same length
+        # Build one sample dict per batch item across the relevant keys.
         some_value = data_dict.get(self.relevant_keys[0])
         for b in range(len(some_value)):
             new_dict = {i: data_dict[i][b:b+1] for i in self.relevant_keys}

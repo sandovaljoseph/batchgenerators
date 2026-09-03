@@ -72,13 +72,11 @@ class TestDataLoader(unittest.TestCase):
         data = list(range(123))
 
         dl = DummyDataLoader(deepcopy(data), 12, 1, 1, return_incomplete=True, shuffle=True, infinite=False)
-        # this should raise a StopIteration
         with self.assertRaises(StopIteration):
             for i in range(1000):
                 idx = next(dl)
 
         dl = DummyDataLoader(deepcopy(data), 12, 1, 1, return_incomplete=True, shuffle=True, infinite=True)
-        # this should now not raise a StopIteration anymore
         for i in range(1000):
             idx = next(dl)
 
@@ -87,7 +85,6 @@ class TestDataLoader(unittest.TestCase):
         batch_size = 12
 
         dl = DummyDataLoader(deepcopy(data), batch_size, 1, 1, return_incomplete=False, shuffle=False, infinite=False)
-        # this should now not raise a StopIteration anymore
         total = 0
         ctr = 0
         for i in dl:
@@ -99,7 +96,6 @@ class TestDataLoader(unittest.TestCase):
         self.assertTrue(ctr == 10)
 
         dl = DummyDataLoader(deepcopy(data), batch_size, 1, 1, return_incomplete=True, shuffle=False, infinite=False)
-        # this should now not raise a StopIteration anymore
         total = 0
         ctr = 0
         for i in dl:
@@ -154,14 +150,12 @@ class TestDataLoader(unittest.TestCase):
         dl = DummyDataLoader(deepcopy(data), 12, num_workers, 1, return_incomplete=True, shuffle=True, infinite=False)
         mt = MultiThreadedAugmenter(dl, None, num_workers, 1, None, False)
 
-        # this should raise a StopIteration
         with self.assertRaises(StopIteration):
             for i in range(1000):
                 idx = next(mt)
 
         dl = DummyDataLoader(deepcopy(data), 12, num_workers, 1, return_incomplete=True, shuffle=True, infinite=True)
         mt = MultiThreadedAugmenter(dl, None, num_workers, 1, None, False)
-        # this should now not raise a StopIteration anymore
         for i in range(1000):
             idx = next(mt)
 
@@ -211,17 +205,11 @@ class TestDataLoader(unittest.TestCase):
         epochs = 3
 
         for data in data_list:
-            #print('data', len(data))
             for num_workers in worker_list:
-                #print('num_workers', num_workers)
                 for batch_size in batch_size_list:
-                    #print('batch_size', batch_size)
                     for return_incomplete in [True, False]:
-                        #print('return_incomplete', return_incomplete)
                         for shuffle in [True, False]:
-                            #print('shuffle', shuffle)
                             for seed_for_shuffle in seed_list:
-                                #print('seed_for_shuffle', seed_for_shuffle)
                                 if return_incomplete:
                                     if len(data) % batch_size == 0:
                                         expected_num_batches = len(data) // batch_size

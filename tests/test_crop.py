@@ -374,14 +374,12 @@ class TestCrop(unittest.TestCase):
         data = np.zeros((8, 4, 30, 30, 30))
         seg = np.zeros(data.shape)
 
-        # we set the center that we expect to be cropped to 1 and then check if we only get 1's in the result
-        # crop_size is [10, 20, 16] and data_shape is [30, 30, 30]
+        # Mark the expected crop center with ones.
         crop_size = np.array([10, 20, 16])
         shp = np.array(data.shape[2:])
         border = (shp - crop_size) // 2
         data[:, :, border[0]:(shp[0] + crop_size[0]), border[1]:(shp[1] + crop_size[0]),
         border[2]:(shp[2] + crop_size[0])] = 1
-        # same with seg
         seg[:, :, border[0]:(shp[0] + crop_size[0]), border[1]:(shp[1] + crop_size[0]),
         border[2]:(shp[2] + crop_size[0])] = 1
 
@@ -399,14 +397,12 @@ class TestCrop(unittest.TestCase):
         data = np.zeros((8, 4, 30, 30, 30))
         seg = np.zeros(data.shape)
 
-        # we set the center that we expect to be cropped to 1 and then check if we only get 1's in the result
-        # crop_size is [10, 20, 16] and data_shape is [30, 30, 30]
+        # Mark the expected crop center with ones.
         crop_size = np.array([9, 19, 13])
         shp = np.array(data.shape[2:])
         border = (shp - crop_size) // 2
         data[:, :, border[0]:(shp[0] + crop_size[0]), border[1]:(shp[1] + crop_size[0]),
         border[2]:(shp[2] + crop_size[0])] = 1
-        # same with seg
         seg[:, :, border[0]:(shp[0] + crop_size[0]), border[1]:(shp[1] + crop_size[0]),
         border[2]:(shp[2] + crop_size[0])] = 1
 
@@ -426,7 +422,7 @@ class TestCrop(unittest.TestCase):
         crop_size = np.array([36, 40, 16])
         data_cropped, seg_cropped = center_crop(data, crop_size, seg)
 
-        # data and set are just ones and will be padded of necessary, so the border will be 0
+        # Padding adds zeros around the original all-ones array.
         border = (crop_size - np.array(data.shape[2:])) // 2
         assert np.sum(data_cropped[:, :, 0:border[0]]) == 0
         assert np.sum(data_cropped[:, :, border[0] + crop_size[0]:]) == 0
@@ -443,7 +439,7 @@ class TestCrop(unittest.TestCase):
         crop_size = (16, 16, 16)
         margin = (-4, -4, -4)
 
-        sums = [] # these should always be different
+        sums = []  # These sums should vary across random crops.
         for _ in range(50):
             data_cropped, _ = random_crop(data, crop_size=crop_size, margins=margin)
             s = np.sum(data_cropped[0, 0, 8, 8, :])

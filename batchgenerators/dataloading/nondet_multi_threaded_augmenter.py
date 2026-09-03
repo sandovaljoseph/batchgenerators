@@ -154,15 +154,13 @@ def results_loop(in_queue: Queue, out_queue: thrQueue, abort_event: Event,
 
 class NonDetMultiThreadedAugmenter(object):
     """
-    Non-deterministic but potentially faster than MultiThreadedAugmenter and uses less RAM. Also less complicated.
-    This one only has one queue through which the communication with background workers happens, meaning that there
-    can be a race condition to it (and thus a nondeterministic ordering of batches). The advantage of this approach is
-    that we will never run into the issue where everything needs to wait for worker X to finish its work.
-    Also this approach requires less RAM because we do not need to have some number of cached batches per worker and
-    now use a global pool of caches batches that is shared among all workers.
+    Non-deterministic, but often faster and lower-RAM than MultiThreadedAugmenter.
+    This variant uses one shared queue for all workers, so batch order depends
+    on which worker finishes first. The shared queue also avoids per-worker
+    cache buffers, which reduces RAM use.
     THIS MTA ONLY WORKS WITH DATALOADER THAT RETURN INFINITE RANDOM SAMPLES! So if you are using DataLoader, make sure
     to set infinite=True.
-    Seeding this is not recommended :-)
+    Seeding this mode is not recommended.
     """
 
     def __init__(self, data_loader, transform, num_processes, num_cached=2, seeds=None, pin_memory=False,

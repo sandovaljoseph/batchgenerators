@@ -23,9 +23,8 @@ class BasicDataLoader(SlimDataLoaderBase):
     """
 
     def generate_train_batch(self):
-        #Sample randomly from data
         idx = np.random.choice(self._data[0].shape[0], self.batch_size, True, None)
-        # copy data to ensure that we are not modifying the original dataset with subsequeng augmentation techniques!
+        # Copy to keep later augmentations from changing the source arrays.
         x = np.array(self._data[0][idx])
         y = np.array(self._data[1][idx])
         data_dict = {"data": x,
@@ -63,8 +62,8 @@ class DummyGenerator(SlimDataLoaderBase):
 class OneDotDataLoader(SlimDataLoaderBase):
     def __init__(self, dataset_size, batch_size, coord_of_voxel):
         """
-        creates both data and seg with only one voxel being = 1 and the rest zero. This will allow easy tracking of
-        spatial transformations
+        creates both data and seg with only one voxel being = 1 and the rest zero.
+        This lets tests track spatial transforms.
         :param data_size: (b,c,x,y(,z))
         :param coord_of_voxel: (x, y(, z)))
         """

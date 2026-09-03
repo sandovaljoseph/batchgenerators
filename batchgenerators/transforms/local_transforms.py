@@ -55,12 +55,12 @@ class LocalTransform(ABC):
 
         kernel_2d = kernels[0][:, None].dot(kernels[1][None])
         if len(kernels) > 2:
-            # trial and error got me here lol
+            # Extend the 2D kernel to the third axis.
             kernel_image = kernel_2d[:, :, None].dot(kernels[2][None])
         else:
             kernel_image = kernel_2d
 
-        # normalize to [0, 1]
+        # Normalize to [0, 1].
         kernel_image = kernel_image - kernel_image.min()
         kernel_image = kernel_image / max(1e-8, kernel_image.max())
         return kernel_image
@@ -69,7 +69,7 @@ class LocalTransform(ABC):
         kernel_image = np.zeros(img_shp, dtype=np.float32)
         for n in range(num_kernels):
             kernel_image += self._generate_kernel(img_shp)
-        # normalize to [0, 1]
+        # Normalize to [0, 1].
         kernel_image = kernel_image - kernel_image.min()
         kernel_image = kernel_image / max(1e-8, kernel_image.max())
         return kernel_image
@@ -116,14 +116,11 @@ class BrightnessGradientAdditiveTransform(LocalTransform):
         :param scale: scale of the gradient. Large values recommended!
             float: fixed value
             (float, float): will be sampled independently for each dimension from the interval [scale[0], scale[1]]
-            callable: you get all the freedom you want. Will be called as scale(image.shape, dimension) where dimension
-            is the index in image.shape we are requesting the scale for. Must return scalar (float).
+            callable: called as scale(image.shape, dimension). Must return a scalar float.
         :param loc:
             (float, float): sample location uniformly from interval [scale[0], scale[1]] (see main description)
-            callable: you get all the freedom you want. Will be called as loc(image.shape, dimension) where dimension
-            is the index in image.shape we are requesting the location for. Must return a scalar value denoting a relative
-            position along axis dimension (0 for index 0, 1 for image.shape[dimension]. Values beyond 0 and 1 are
-            possible and even recommended)
+            callable: called as loc(image.shape, dimension). Must return a
+            scalar relative position along that axis.
         :param max_strength: scaling of the intensity gradient. Determines what max(abs(add_gauss)) is going to be
             float: fixed value
             (float, float): sampled from [max_strength[0], max_strength[1]]
@@ -157,14 +154,14 @@ class BrightnessGradientAdditiveTransform(LocalTransform):
                 if self.same_for_all_channels:
                     kernel = self._generate_kernel(img_shape)
                     if self.mean_centered:
-                        # first center the mean of the kernel
+                        # Keep the additive gradient zero-mean.
                         kernel -= kernel.mean()
                     mx = max(np.max(np.abs(kernel)), 1e-8)
                     if not callable(self.max_strength):
                         strength = sample_scalar(self.max_strength, None, None)
                     for ci in range(c):
                         if np.random.uniform() < self.p_per_channel:
-                            # now rescale so that the maximum value of the kernel is max_strength
+                            # Scale the kernel to the sampled strength.
                             strength = sample_scalar(self.max_strength, data[bi, ci], kernel) if callable(
                                 self.max_strength) else strength
                             kernel_scaled = np.copy(kernel) / mx * strength
@@ -192,7 +189,7 @@ class LocalGammaTransform(LocalTransform):
                  p_per_channel: float = 1.,
                  data_key: str = "data"):
         """
-        This transform is weird and definitely experimental. Use at your own risk
+        Experimental local gamma transform.
 
         Applies gamma correction to the image. The gamma value varies locally using a gaussian kernel
 
@@ -208,17 +205,14 @@ class LocalGammaTransform(LocalTransform):
         :param scale: scale of the gradient. Large values recommended!
             float: fixed value
             (float, float): will be sampled independently for each dimension from the interval [scale[0], scale[1]]
-            callable: you get all the freedom you want. Will be called as scale(image.shape, dimension) where dimension
-            is the index in image.shape we are requesting the scale for. Must return scalar (float).
+            callable: called as scale(image.shape, dimension). Must return a scalar float.
         :param loc:
             (float, float): sample location uniformly from interval [scale[0], scale[1]] (see main description)
-            callable: you get all the freedom you want. Will be called as loc(image.shape, dimension) where dimension
-            is the index in image.shape we are requesting the location for. Must return a scalar value denoting a relative
-            position along axis dimension (0 for index 0, 1 for image.shape[dimension]. Values beyond 0 and 1 are
-            possible and even recommended)
+            callable: called as loc(image.shape, dimension). Must return a
+            scalar relative position along that axis.
         :param gamma: gamma value at the peak of the gaussian distribution.
             Recommended: lambda: np.random.uniform(0.01, 1) if np.random.uniform() < 1 else np.random.uniform(1, 3)
-            No, this is not a joke. Deal with it.
+            Use a wide range if you want stronger local changes.
         :param same_for_all_channels: If True, then the same gradient will be applied to all selected color
         channels of a sample (see p_per_channel). If False, each selected channel obtains its own random gradient.
         :param allow_kernel_inversion:
@@ -253,10 +247,10 @@ class LocalGammaTransform(LocalTransform):
         return data_dict
 
     def _apply_gamma_gradient(self, img: np.ndarray, kernel: np.ndarray) -> np.ndarray:
-        # store keep original image range
+        # Restore the original value range after interpolation.
         mn, mx = img.min(), img.max()
 
-        # rescale tp [0, 1]
+        # Rescale to [0, 1] for gamma correction.
         img = (img - mn) / (max(mx - mn, 1e-8))
 
         gamma = sample_scalar(self.gamma)
@@ -319,14 +313,13 @@ class LocalSmoothingTransform(LocalTransform):
         return data_dict
 
     def _apply_local_smoothing(self, img: np.ndarray, kernel: np.ndarray) -> np.ndarray:
-        # copy kernel so that we don't modify it out of scope
+        # Keep the caller kernel unchanged.
         kernel = np.copy(kernel)
 
         smoothing = sample_scalar(self.smoothing_strength)
         assert 0 <= smoothing <= 1, 'smoothing_strength must be between 0 and 1, is %f' % smoothing
 
-        # prepare kernel by rescaling it to gamma_range
-        # kernel is already [0, 1]
+        # kernel is already [0, 1].
         kernel *= smoothing
 
         smoothing_kernel_size = sample_scalar(self.kernel_size)
@@ -371,12 +364,12 @@ class LocalContrastTransform(LocalTransform):
         return data_dict
 
     def _apply_local_smoothing(self, img: np.ndarray, kernel: np.ndarray) -> np.ndarray:
-        # copy kernel so that we don't modify it out of scope
+        # Keep the caller kernel unchanged.
         kernel = np.copy(kernel)
 
         new_contrast = sample_scalar(self.new_contrast)
 
-        # we compute the mean within the kernel
+        # Compute the local mean inside the kernel.
         mean = (img * kernel).sum() / kernel.sum()
         img_modified = (img - mean) * new_contrast + mean
 
@@ -459,5 +452,3 @@ if __name__ == '__main__':
     diff = [i - j for i, j in zip(data['data'][0], transformed[0])]
     [print(i[10,10]) for i in diff]
     view_batch(*data['data'][0], *transformed[0], *[i - j for i, j in zip(data['data'][0], transformed[0])])
-
-

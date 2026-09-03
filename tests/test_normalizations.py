@@ -73,10 +73,6 @@ class TestNormalization(unittest.TestCase):
         self.assertEqual(data_normalized4.size, 0, msg="not an empty array")
         print('Test normalization of empty data array with range [0,1]. [DONE]')
 
-        # print('Test RuntimeWarning of constant data with zero eps. [START]')
-        # self.assertWarns(RuntimeWarning, range_normalization, data3, rnge = rng3, per_channel = True, eps = 0)
-        # print('Test RuntimeWarning of constant data with zero eps. [DONE]')
-
         print('Test test_range_normalization_per_channel. [DONE]')
 
     def test_range_normalization_whole_image(self):
@@ -122,16 +118,11 @@ class TestNormalization(unittest.TestCase):
                                    msg="not scaled to correct min range limit")
             self.assertAlmostEqual(data_normalized3[b].max(), rng3[0], delta=1e-4,
                                    msg="not scaled to correct max range limit")
-            # self.assertEqual(np.unravel_index(np.argmax(data_normalized3[b], axis=None), data_normalized1[b].shape)[0], 0, msg="max not in the right channel")
         print('Test normalization of constant data  with range [0,1]. [DONE]')
 
         print('Test normalization of empty data array with range [0,1]. [START]')
         self.assertEqual(data_normalized4.size, 0, msg="not an empty array")
         print('Test normalization of empty data array with range [0,1]. [DONE]')
-
-        # print('Test RuntimeWarning of constant data with zero eps. [START]')
-        # self.assertWarns(RuntimeWarning, range_normalization, data3, rnge = rng3, per_channel = False, eps = 0)
-        # print('Test RuntimeWarning of constant data with zero eps. [DONE]')
 
         print('Test test_range_normalization_whole_image. [DONE]')
 
@@ -158,10 +149,6 @@ class TestNormalization(unittest.TestCase):
                 self.assertAlmostEqual(data_normalized2[b, c, :, :].mean(), 0, msg="mean not zeros")
                 self.assertAlmostEqual(data_normalized2[b, c, :, :].std(), 0, msg="std not 1")
         print('Test constant input data. [DONE]')
-
-        # print('Test RuntimeWarning of constant data with zero eps. [START]')
-        # self.assertWarns(RuntimeWarning, zero_mean_unit_variance_normalization, data2, per_channel=True, epsilon=0)
-        # print('Test RuntimeWarning of constant data with zero eps. [DONE]')
 
         print('Test normalization of empty data array. [START]')
         self.assertEqual(data_normalized3.size, 0, msg="not an empty array")
@@ -190,10 +177,6 @@ class TestNormalization(unittest.TestCase):
             self.assertAlmostEqual(data_normalized2[b].mean(), 0, msg="mean not zeros")
             self.assertAlmostEqual(data_normalized2[b].std(), 0, msg="std not 1")
         print('Test constant input data. [DONE]')
-
-        # print('Test RuntimeWarning of constant data with zero eps. [START]')
-        # self.assertWarns(RuntimeWarning, zero_mean_unit_variance_normalization, data2, per_channel=False, epsilon=0)
-        # print('Test RuntimeWarning of constant data with zero eps. [DONE]')
 
         print('Test normalization of empty data array. [START]')
         self.assertEqual(data_normalized3.size, 0, msg="not an empty array")

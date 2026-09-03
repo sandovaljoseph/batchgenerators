@@ -25,8 +25,8 @@ def unpickle(file):
 def maybe_download_and_prepare_cifar(target_dir, cifar=10):
     '''
     Checks if cifar is already present in target_dir and downloads it if not.
-    CIFAR comes in 5 batches that need to be unpickled. What a mess.
-    We stack all 5 batches together to one single npy array. No idea why they are being so complicated
+    CIFAR comes in 5 batches that need to be unpickled.
+    This function stacks them into one npy array.
     :param target_dir:
     :return:
     '''
@@ -115,4 +115,3 @@ class HighPerformanceCIFARLoader(DataLoader):
         filenames = self._data[2][indices]
 
         return {'data': data.astype(np.float32), 'labels': labels, 'filenames': filenames}
-

@@ -166,7 +166,7 @@ class DataLoader(SlimDataLoaderBase):
         self.last_reached = False
         self.sampling_probabilities = sampling_probabilities
 
-        # when you derive, make sure to set this! We can't set it here because we don't know what data will be like
+        # Derived loaders must set indices for their data layout.
         self.indices = None
 
     def reset(self):
@@ -176,14 +176,14 @@ class DataLoader(SlimDataLoaderBase):
 
         self.was_initialized = True
 
-        # no need to shuffle if we are returning infinite random samples
+        # Infinite sampling already draws random indices.
         if not self.infinite and self.shuffle:
             self.rs.shuffle(self.indices)
 
         self.last_reached = False
 
     def get_indices(self):
-        # if self.infinite, this is easy
+        # Infinite mode samples with replacement.
         if self.infinite:
             return np.random.choice(self.indices, self.batch_size, replace=True, p=self.sampling_probabilities)
 

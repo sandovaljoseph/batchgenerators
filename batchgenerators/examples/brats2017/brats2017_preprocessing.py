@@ -53,18 +53,13 @@ def load_and_preprocess(case, patient_name, output_folder):
     :param patient_name:
     :return:
     """
-    # load SimpleITK Images
+    # Load images and arrays.
     imgs_sitk = [sitk.ReadImage(i) for i in case]
 
-    # get pixel arrays from SimpleITK images
     imgs_npy = [sitk.GetArrayFromImage(i) for i in imgs_sitk]
 
-    # get some metadata
     spacing = imgs_sitk[0].GetSpacing()
-    # the spacing returned by SimpleITK is in inverse order relative to the numpy array we receive. If we wanted to
-    # resample the data and if the spacing was not isotropic (in BraTS all cases have already been resampled to 1x1x1mm
-    # by the organizers) then we need to pay attention here. Therefore we bring the spacing into the correct order so
-    # that spacing[0] actually corresponds to the spacing of the first axis of the numpy array
+    # SimpleITK spacing is reversed relative to the NumPy axis order.
     spacing = np.array(spacing)[::-1]
 
     direction = imgs_sitk[0].GetDirection()
@@ -72,40 +67,38 @@ def load_and_preprocess(case, patient_name, output_folder):
 
     original_shape = imgs_npy[0].shape
 
-    # now stack the images into one 4d array, cast to float because we will get rounding problems if we don't
+    # Cast to float32 before normalization math.
     imgs_npy = np.concatenate([i[None] for i in imgs_npy]).astype(np.float32)
 
-    # now find the nonzero region and crop to that
+    # Find the joint nonzero bounds across all modalities.
     nonzero = [np.array(np.where(i != 0)) for i in imgs_npy]
     nonzero = [[np.min(i, 1), np.max(i, 1)] for i in nonzero]
     nonzero = np.array([np.min([i[0] for i in nonzero], 0), np.max([i[1] for i in nonzero], 0)]).T
-    # nonzero now has shape 3, 2. It contains the (min, max) coordinate of nonzero voxels for each axis
 
-    # now crop to nonzero
+    # Crop to the nonzero box.
     imgs_npy = imgs_npy[:,
                nonzero[0, 0] : nonzero[0, 1] + 1,
                nonzero[1, 0]: nonzero[1, 1] + 1,
                nonzero[2, 0]: nonzero[2, 1] + 1,
                ]
 
-    # now we create a brain mask that we use for normalization
+    # Use nonzero image voxels as the brain mask.
     nonzero_masks = [i != 0 for i in imgs_npy[:-1]]
     brain_mask = np.zeros(imgs_npy.shape[1:], dtype=bool)
     for i in range(len(nonzero_masks)):
         brain_mask = brain_mask | nonzero_masks[i]
 
-    # now normalize each modality with its mean and standard deviation (computed within the brain mask)
+    # Normalize each image channel inside the brain mask.
     for i in range(len(imgs_npy) - 1):
         mean = imgs_npy[i][brain_mask].mean()
         std = imgs_npy[i][brain_mask].std()
         imgs_npy[i] = (imgs_npy[i] - mean) / (std + 1e-8)
         imgs_npy[i][brain_mask == 0] = 0
 
-    # the segmentation of brats has the values 0, 1, 2 and 4. This is pretty inconvenient to say the least.
-    # We move everything that is 4 to 3
+    # BraTS uses label 4; map it to 3 for compact labels.
     imgs_npy[-1][imgs_npy[-1] == 4] = 3
 
-    # now save as npz
+    # Save the preprocessed tensor and metadata.
     np.save(join(output_folder, patient_name + ".npy"), imgs_npy)
 
     metadata = {
@@ -129,31 +122,14 @@ def save_segmentation_as_nifti(segmentation, metadata, output_file):
     sitk_image = sitk.GetImageFromArray(seg_original_shape)
     sitk_image.SetDirection(metadata['direction'])
     sitk_image.SetOrigin(metadata['origin'])
-    # remember to revert spacing back to sitk order again
+    # Convert spacing back to SimpleITK axis order.
     sitk_image.SetSpacing(tuple(metadata['spacing'][[2, 1, 0]]))
     sitk.WriteImage(sitk_image, output_file)
 
 
 if __name__ == "__main__":
-    # This is the same preprocessing I used for our contributions to the BraTS 2017 and 2018 challenges.
-    # Preprocessing is described in the documentation of load_and_preprocess
-
-    # The training data is identical between BraTS 2017 and 2018. You can request access here:
-    # https://ipp.cbica.upenn.edu/#BraTS18_registration
-
-    # brats_base points to where the extracted downloaded training data is
-
-    # preprocessed data is saved as npy. This may seem odd if you are familiar with medical images, but trust me it's
-    # the best way to do this for deep learning. It does not make much of a difference for BraTS, but if you are
-    # dealing with larger images this is crusial for your pipelines to not get stuck in CPU bottleneck. What we can do
-    # with numpy arrays is we can load them via np.load(file, mmap_mode="r") and then read just parts of it on the fly
-    # during training. This is super important if your patch size is smaller than the size of the entire patient (for
-    # example if you work with large CT data or if you need 2D slices).
-    # For this to work properly the output_folder (or wherever the data is stored during training) must be on an SSD!
-    # HDDs are usually too slow and you also wouldn't want to do this over a network share (there are exceptions but
-    # take this as a rule of thumb)
-
-    # Why is this not an IPython Notebook you may ask? Because I HATE IPython Notebooks. Simple :-)
+    # Save to npy so training can mmap slices from fast local storage.
+    # This keeps large patch-based pipelines from stalling on I/O.
 
     list_of_lists = get_list_of_files(brats_folder_with_downloaded_train_data)
 
@@ -166,14 +142,9 @@ if __name__ == "__main__":
     p.close()
     p.join()
 
-    # remember that we cropped the data before preprocessing. If we predict the test cases, we want to run the same
-    # preprocessing for them. We need to then put the segmentation back into its original position (due to cropping).
-    # Here is how you can do that:
-
-    # lets use Brats17_2013_0_1 for this example
+    # Restore the cropped prediction to its original image space.
     img = np.load(join(brats_preprocessed_folder, "Brats17_2013_0_1.npy"))
     metadata = load_pickle(join(brats_preprocessed_folder, "Brats17_2013_0_1.pkl"))
-    # remember that we changed the segmentation labels from 0, 1, 2, 4 to 0, 1, 2, 3. We need to change that back to
-    # get the correct format
+    # Map label 3 back to the BraTS label 4 before export.
     img[-1][img[-1] == 3] = 4
     save_segmentation_as_nifti(img[-1], metadata, join(brats_preprocessed_folder, "delete_me.nii.gz"))

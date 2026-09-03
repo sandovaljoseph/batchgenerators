@@ -31,7 +31,7 @@ class TestMirrorAxis(unittest.TestCase):
 
         np.random.seed(self.seed)
 
-        ### 2D initialiazations
+        # 2D setup.
 
         cam = data.camera()
         self.cam = cam[np.newaxis, np.newaxis, :, :]
@@ -43,7 +43,7 @@ class TestMirrorAxis(unittest.TestCase):
         self.x_2D = self.cam
         self.y_2D = self.cam
 
-        ### 3D initialiazations
+        # 3D setup.
 
         self.cam_3D = np.random.rand(20, 20, 20)[np.newaxis, np.newaxis, :, :, :]
 
@@ -61,8 +61,6 @@ class TestMirrorAxis(unittest.TestCase):
 
 
     def test_random_distributions_2D(self):
-        ### test whether all 4 possible mirrorings occur in approximately equal frquencies in 2D
-
         batch_gen = BasicDataLoader((self.x_2D, self.y_2D), self.batch_size, number_of_threads_in_multithreaded=None)
         batch_gen = SingleThreadedAugmenter(batch_gen, MirrorTransform((0, 1)))
 
@@ -91,8 +89,6 @@ class TestMirrorAxis(unittest.TestCase):
 
 
     def test_segmentations_2D(self):
-        ### test whether segmentations are mirrored coherently with images
-
         batch_gen = BasicDataLoader((self.x_2D, self.y_2D), self.batch_size, number_of_threads_in_multithreaded=None)
         batch_gen = SingleThreadedAugmenter(batch_gen, MirrorTransform((0, 1)))
 
@@ -109,8 +105,6 @@ class TestMirrorAxis(unittest.TestCase):
 
 
     def test_random_distributions_3D(self):
-        ### test whether all 8 possible mirrorings occur in approximately equal frquencies in 3D case
-
         batch_gen = BasicDataLoader((self.x_3D, self.y_3D), self.batch_size, number_of_threads_in_multithreaded=None)
         batch_gen = SingleThreadedAugmenter(batch_gen, MirrorTransform((0, 1, 2)))
 
@@ -150,8 +144,6 @@ class TestMirrorAxis(unittest.TestCase):
 
 
     def test_segmentations_3D(self):
-        ### test whether segmentations are rotated coherently with images
-
         batch_gen = BasicDataLoader((self.x_3D, self.y_3D), self.batch_size, number_of_threads_in_multithreaded=None)
         batch_gen = SingleThreadedAugmenter(batch_gen, MirrorTransform((0, 1, 2)))
 
@@ -169,4 +161,3 @@ class TestMirrorAxis(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

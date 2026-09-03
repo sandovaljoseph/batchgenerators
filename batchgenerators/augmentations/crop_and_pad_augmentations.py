@@ -119,7 +119,7 @@ def crop(data, seg=None, crop_size=128, margins=(0, 0, 0), crop_type="center",
                                    abs(min(0, data_shape_here[d + 2] - (lbs[d] + crop_size[d])))]
                                   for d in range(dim)]
 
-        # we should crop first, then pad -> reduces i/o for memmaps, reduces RAM usage and improves speed
+        # Crop before pad to reduce memmap I/O and RAM use.
         ubs = [min(lbs[d] + crop_size[d], data_shape_here[d+2]) for d in range(dim)]
         lbs = [max(0, lbs[d]) for d in range(dim)]
 

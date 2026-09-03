@@ -144,7 +144,7 @@ def augment_channel_translation(data, const_channel=0, max_shifts=None):
     const_data = data[:, [const_channel]]
     trans_data = data[:, [i for i in range(shape[1]) if i != const_channel]]
 
-    # iterate the batch dimension
+    # Process each sample in the batch.
     for j in range(shape[0]):
 
         slice = trans_data[j]
@@ -157,7 +157,7 @@ def augment_channel_translation(data, const_channel=0, max_shifts=None):
         else:
             dims = ['y', 'x']
 
-        # iterate the image dimensions, randomly draw shifts/translations
+        # Draw one random shift per spatial axis.
         for i, v in enumerate(dims):
             rand_shift = np.random.choice(list(range(-max_shifts[v], max_shifts[v], 1)))
 
@@ -168,7 +168,7 @@ def augment_channel_translation(data, const_channel=0, max_shifts=None):
                 ixs[v] = {'lo': abs(rand_shift), 'hi': shape[2 + i]}
                 pad[v] = {'lo': 0, 'hi': abs(rand_shift)}
 
-        # shift and pad so as to retain the original image shape
+        # Shift and pad to keep the original shape.
         if len(shape) == 5:
             slice = slice[:, ixs['z']['lo']:ixs['z']['hi'], ixs['y']['lo']:ixs['y']['hi'],
                     ixs['x']['lo']:ixs['x']['hi']]
@@ -261,7 +261,7 @@ def augment_spatial(data, seg, patch_size, patch_center_dist_from_border=30,
             coords = scale_coords(coords, sc)
             modified_coords = True
 
-        # now find a nice center location 
+        # Recenter the transformed coordinates in the crop window.
         if modified_coords:
             for d in range(dim):
                 if random_crop:
@@ -359,28 +359,19 @@ def augment_spatial_2(data, seg, patch_size, patch_center_dist_from_border=30,
             mag = []
             sigmas = []
 
-            # one scale per case, scale is in percent of patch_size
+            # Sample one deformation scale per case in patch-size units.
             def_scale = np.random.uniform(deformation_scale[0], deformation_scale[1])
 
             for d in range(len(data[sample_id].shape) - 1):
-                # transform relative def_scale in pixels
+                # Convert the relative scale to pixels for this axis.
                 sigmas.append(def_scale * patch_size[d])
 
-                # define max magnitude and min_magnitude
                 max_magnitude = sigmas[-1] * (1 / 2)
                 min_magnitude = sigmas[-1] * (1 / 8)
-
-                # the magnitude needs to depend on the scale, otherwise not much is going to happen most of the time.
-                # we want the magnitude to be high, but not higher than max_magnitude (otherwise the deformations
-                # become very ugly). Let's sample mag_real with a gaussian
-                # mag_real = np.random.normal(max_magnitude * (2 / 3), scale=max_magnitude / 3)
-                # clip to make sure we stay reasonable
-                # mag_real = np.clip(mag_real, 0, max_magnitude)
 
                 mag_real = np.random.uniform(min_magnitude, max_magnitude)
 
                 mag.append(mag_real)
-            # print(np.round(sigmas, decimals=3), np.round(mag, decimals=3))
             coords = elastic_deform_coordinates_2(coords, sigmas, mag)
             modified_coords = True
 
@@ -424,9 +415,9 @@ def augment_spatial_2(data, seg, patch_size, patch_center_dist_from_border=30,
             coords = scale_coords(coords, sc)
             modified_coords = True
 
-        # now find a nice center location
+        # Recenter the transformed coordinates in the crop window.
         if modified_coords:
-            # recenter coordinates
+            # Center the transformed grid before the final offset.
             coords_mean = coords.mean(axis=tuple(range(1, len(coords.shape))), keepdims=True)
             coords -= coords_mean
 

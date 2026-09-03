@@ -182,7 +182,7 @@ def center_crop_3D_image(img, crop_size):
 
 
 def center_crop_3D_image_batched(img, crop_size):
-    # dim 0 is batch, dim 1 is channel, dim 2, 3 and 4 are x y z
+    # img is (b, c, x, y, z).
     center = np.array(img.shape[2:]) / 2.
     if type(crop_size) not in (tuple, list):
         center_crop = [int(crop_size)] * (len(img.shape) - 2)
@@ -208,7 +208,7 @@ def center_crop_2D_image(img, crop_size):
 
 
 def center_crop_2D_image_batched(img, crop_size):
-    # dim 0 is batch, dim 1 is channel, dim 2 and 3 are x y
+    # img is (b, c, x, y).
     center = np.array(img.shape[2:]) / 2.
     if type(crop_size) not in (tuple, list):
         center_crop = [int(crop_size)] * (len(img.shape) - 2)
@@ -422,7 +422,7 @@ def create_random_rotation(angle_x=(0, 2 * np.pi), angle_y=(0, 2 * np.pi), angle
 
 
 def illumination_jitter(img, u, s, sigma):
-    # img must have shape [....., c] where c is the color channel
+    # img must be [..., c] with the color axis last.
     alpha = np.random.normal(0, sigma, s.shape)
     jitter = np.dot(u, alpha * s)
     img2 = np.array(img)
@@ -433,7 +433,7 @@ def illumination_jitter(img, u, s, sigma):
 
 def general_cc_var_num_channels(img, diff_order=0, mink_norm=1, sigma=1, mask_im=None, saturation_threshold=255,
                                 dilation_size=3, clip_range=True):
-    # img must have first dim color channel! img[c, x, y(, z, ...)]
+    # img must use the first axis for color channels.
     dim_img = len(img.shape[1:])
     if clip_range:
         minm = img.min()
@@ -541,8 +541,7 @@ def convert_seg_to_bounding_box_coordinates(data_dict, dim, get_rois_from_seg_fl
 
                         p_coords_list.append(coord_list)
                         p_roi_masks_list.append(r)
-                        # add background class = 0. rix is a patient wide index of lesions. since 'class_target' is
-                        # also patient wide, this assignment is not dependent on patch occurrances.
+                        # Keep label 0 for background; lesion labels start at 1.
                         p_roi_labels_list.append(data_dict['class_target'][b][rix] + 1)
 
                     if class_specific_seg_flag:

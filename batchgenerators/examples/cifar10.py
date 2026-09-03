@@ -22,8 +22,7 @@ def default_collate(batch):
     if isinstance(batch[0], torch.Tensor):
         out = None
         if _use_shared_memory:
-            # If we're in a background process, concatenate directly into a
-            # shared memory tensor to avoid an extra copy
+            # Build shared output storage to avoid an extra copy.
             numel = sum([x.numel() for x in batch])
             storage = batch[0].storage()._new_shared(numel)
             out = batch[0].new(storage)
@@ -32,7 +31,7 @@ def default_collate(batch):
             and elem_type.__name__ != 'string_':
         elem = batch[0]
         if elem_type.__name__ == 'ndarray':
-            # array of string classes and object
+            # Reject string and object arrays.
             if re.search('[SaUO]', elem.dtype.str) is not None:
                 raise TypeError(error_msg.format(elem.dtype))
 
@@ -56,8 +55,6 @@ def default_collate(batch):
 
 
 if __name__ == '__main__':
-    ### current implementation of betchgenerators stuff for this script does not use _use_shared_memory!
-
     from time import time
     batch_size = 50
     num_workers = 8
@@ -73,8 +70,8 @@ if __name__ == '__main__':
     print('pin_memory', pin_memory)
     print('num_epochs', num_epochs)
 
-    tr_transforms = [SpatialTransform((32, 32))] * 1  # SpatialTransform is computationally expensive and we need some
-    # load on CPU so we just stack 5 of them on top of each other
+    # Add one expensive transform so this benchmark has CPU work to do.
+    tr_transforms = [SpatialTransform((32, 32))] * 1
     tr_transforms.append(numpy_to_tensor)
     tr_transforms = Compose(tr_transforms)
 
@@ -88,8 +85,8 @@ if __name__ == '__main__':
         batches += 1
     assert len(_['data'].shape) == 4
 
-    assert batches == len(cifar_dataset) / batch_size  # this assertion only holds if len(datset) is divisible by
-    # batch size
+    # This assertion assumes the dataset size is divisible by batch_size.
+    assert batches == len(cifar_dataset) / batch_size
 
     start = time()
     for _ in range(num_epochs):
@@ -99,10 +96,8 @@ if __name__ == '__main__':
     stop = time()
     print('batchgenerators took %03.4f seconds' % (stop - start))
 
-    # The best I can do:
-
-    dl = HighPerformanceCIFARLoader(cifar_dataset_as_arrays, batch_size, num_workers, 1) # this circumvents the
-    # default_collate function, just to see if that is slowing things down
+    # Compare against the loader path that skips default_collate.
+    dl = HighPerformanceCIFARLoader(cifar_dataset_as_arrays, batch_size, num_workers, 1)
     mt = MultiThreadedAugmenter(dl, tr_transforms, num_workers, 1, None, pin_memory)
 
     batches = 0
@@ -110,8 +105,8 @@ if __name__ == '__main__':
         batches += 1
     assert len(_['data'].shape) == 4
 
-    assert batches == len(cifar_dataset_as_arrays[0]) / batch_size  # this assertion only holds if len(datset) is
-    # divisible by batch size
+    # This assertion assumes the dataset size is divisible by batch_size.
+    assert batches == len(cifar_dataset_as_arrays[0]) / batch_size
 
     start = time()
     for _ in range(num_epochs):

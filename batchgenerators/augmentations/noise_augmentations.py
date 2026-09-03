@@ -39,11 +39,10 @@ def augment_gaussian_noise(data_sample: np.ndarray, noise_variance: Tuple[float,
         variance = None
     for c in range(data_sample.shape[0]):
         if np.random.uniform() < p_per_channel:
-            # lol good luck reading this
+            # Sample per-channel variance only when needed.
             variance_here = variance if variance is not None else \
                 noise_variance[0] if noise_variance[0] == noise_variance[1] else \
                     random.uniform(noise_variance[0], noise_variance[1])
-            # bug fixed: https://github.com/MIC-DKFZ/batchgenerators/issues/86
             data_sample[c] = data_sample[c] + np.random.normal(0.0, variance_here, size=data_sample[c].shape)
     return data_sample
 
@@ -52,8 +51,7 @@ def augment_gaussian_blur(data_sample: np.ndarray, sigma_range: Tuple[float, flo
                           p_per_channel: float = 1, different_sigma_per_axis: bool = False,
                           p_isotropic: float = 0) -> np.ndarray:
     if not per_channel:
-        # Godzilla Had a Stroke Trying to Read This and F***ing Died
-        # https://i.kym-cdn.com/entries/icons/original/000/034/623/Untitled-3.png
+        # Use one sigma for all channels unless anisotropic blur is requested.
         sigma = get_range_val(sigma_range) if ((not different_sigma_per_axis) or
                                                ((np.random.uniform() < p_isotropic) and
                                                 different_sigma_per_axis)) \
@@ -73,7 +71,6 @@ def augment_gaussian_blur(data_sample: np.ndarray, sigma_range: Tuple[float, flo
 
 def augment_blank_square_noise(data_sample, square_size, n_squares, noise_val=(0, 0), channel_wise_n_val=False,
                                square_pos=None):
-    # rnd_n_val = get_range_val(noise_val)
     rnd_square_size = get_range_val(square_size)
     rnd_n_squares = get_range_val(n_squares)
 

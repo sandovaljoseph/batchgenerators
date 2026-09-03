@@ -42,11 +42,11 @@ class TestAugmentContrast(unittest.TestCase):
         contrast_upper_limit_0 = self.factor[0] * (self.data_3D[idx0] - mean) + mean
         contrast_upper_limit_1 = self.factor[1] * (self.data_3D[idx1] - mean) + mean
 
-        # augmented values lower than mean should be lower than lower limit and greater than upper limit
+        # Values below the mean must stay within the scaled lower branch.
         self.assertTrue(np.all(np.logical_and(self.d_3D[idx0] >= contrast_lower_limit_0,
                                               self.d_3D[idx0] <= contrast_upper_limit_0)),
                         "Augmented contrast below mean value not within range")
-        # augmented values greater than mean should be lower than upper limit and greater than lower limit
+        # Values above the mean must stay within the scaled upper branch.
         self.assertTrue(np.all(np.logical_and(self.d_3D[idx1] >= contrast_lower_limit_1,
                                               self.d_3D[idx1] <= contrast_upper_limit_1)),
                         "Augmented contrast above mean not within range")
@@ -63,11 +63,11 @@ class TestAugmentContrast(unittest.TestCase):
         contrast_upper_limit_0 = self.factor[0] * (self.data_2D[idx0] - mean) + mean
         contrast_upper_limit_1 = self.factor[1] * (self.data_2D[idx1] - mean) + mean
 
-        # augmented values lower than mean should be lower than lower limit and greater than upper limit
+        # Values below the mean must stay within the scaled lower branch.
         self.assertTrue(np.all(np.logical_and(self.d_2D[idx0] >= contrast_lower_limit_0,
                                               self.d_2D[idx0] <= contrast_upper_limit_0)),
                         "Augmented contrast below mean value not within range")
-        # augmented values greater than mean should be lower than upper limit and greater than lower limit
+        # Values above the mean must stay within the scaled upper branch.
         self.assertTrue(np.all(np.logical_and(self.d_2D[idx1] >= contrast_lower_limit_1,
                                               self.d_2D[idx1] <= contrast_upper_limit_1)),
                         "Augmented contrast above mean not within range")

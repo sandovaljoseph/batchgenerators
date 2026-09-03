@@ -115,7 +115,7 @@ class AugmentRot90(unittest.TestCase):
                                                   axes=[0, 1])
         tmp = 0
         for i in range(self.data_3D.shape[1]):
-            # check for normal and inverse rotations
+            # Accept both valid rotation directions.
             normal_rotated = np.array_equal(self.data_3D[:, i, :, :], data_rotated[:, :, -i-1, :])
             inverse_rotated = np.array_equal(self.data_3D[:, i, :, :], np.flip(data_rotated[:, :, i, :], axis=1))
             if normal_rotated:

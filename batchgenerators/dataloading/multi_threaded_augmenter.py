@@ -131,9 +131,11 @@ def results_loop(in_queues: List[Queue], out_queue: thrQueue, abort_event: Event
 
 
 class MultiThreadedAugmenter(object):
-    """ Makes your pipeline multi threaded. Yeah!
-    If seeded we guarantee that batches are retunred in the same order and with the same augmentation every time this
-    is run. This is realized internally by using une queue per worker and querying the queues one ofter the other.
+    """Run the pipeline in multiple worker processes.
+
+    If seeded, batches return in the same order with the same augmentations
+    on each run. This uses one queue per worker and reads those queues in a
+    fixed order.
     Args:
         data_loader (generator or DataLoaderBase instance): Your data loader. Must have a .next() function and return
         a dict that complies with our data structure

@@ -121,7 +121,7 @@ def split_path(path: str) -> List[str]:
     return path.split(os.sep)
 
 
-# I'm tired of typing these out
+# Short aliases used across the project.
 join = os.path.join
 isdir = os.path.isdir
 isfile = os.path.isfile
@@ -129,7 +129,7 @@ listdir = os.listdir
 makedirs = maybe_mkdir_p
 os_split_path = os.path.split
 
-# I am tired of confusing those
+# Backward-compatible aliases.
 subfolders = subdirs
 save_pickle = write_pickle
 write_json = save_json
